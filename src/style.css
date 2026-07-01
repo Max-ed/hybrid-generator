@@ -1,0 +1,56 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+}
+
+#app {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 20px;
+}
+
+#canvas-holder canvas {
+  display: block;
+}
+
+#sidebar {
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#uploads {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.upload-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.upload-label input {
+  font-size: 11px;
+  color: #fff;
+}
+
+#pane-holder {
+  width: 100%;
+}

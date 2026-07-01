@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hybrid Generator</title>
+  </head>
+  <body>
+    <div id="app">
+      <div id="canvas-holder"></div>
+      <div id="sidebar">
+        <div id="uploads">
+          <label class="upload-label">
+            Image 1
+            <input id="upload-1" type="file" accept="image/*" />
+          </label>
+          <label class="upload-label">
+            Image 2
+            <input id="upload-2" type="file" accept="image/*" />
+          </label>
+          <label class="upload-label">
+            Image 3 — Block Texture
+            <input id="upload-3" type="file" accept="image/*" />
+          </label>
+          <label class="upload-label">
+            Typo Box 1 (SVG)
+            <input id="upload-typo-1" type="file" accept=".svg,image/svg+xml" />
+          </label>
+          <label class="upload-label">
+            Typo Box 2 (SVG)
+            <input id="upload-typo-2" type="file" accept=".svg,image/svg+xml" />
+          </label>
+        </div>
+        <div id="pane-holder"></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
