@@ -324,6 +324,9 @@ let maskImage: ImageData | null = null;
 let maskReady = false;
 let segEnabled = false;
 let segPending = false;
+let maskWork: Uint8Array | null = null;     // combined mask, blurred in place
+let maskTmp: Uint8Array | null = null;      // box-blur scratch
+let ditherNoise: Uint8Array | null = null;  // fixed per-pixel thresholds — stable, so no boiling
 
 // ---- Live mode fixed-duration recording ----
 const liveRecord = { seconds: 15 };
@@ -342,6 +345,7 @@ const liveConfig = {
   videoAsImage: true,
   gradientMap: true,
   keyOut: true,
+  dither: 0.45,
   showSkeleton: false,
   mirror: true,
   rotate: 0 as 0 | 90 | 270,
@@ -990,6 +994,8 @@ const sketch = (p: p5) => {
           vctx.save();
           vctx.filter = 'none';
           vctx.globalCompositeOperation = 'destination-in';
+          // Smoothing would average the dither back into a soft ramp, so turn it off.
+          vctx.imageSmoothingEnabled = liveConfig.dither <= 0.001;
           vctx.drawImage(maskCanvas, 0, 0, vbW, vbH);
           vctx.restore();
         }
@@ -1250,6 +1256,7 @@ liveFolder.addInput(liveConfig, 'reaction', { min: 0, max: 1, step: 0.01, label:
 liveFolder.addInput(liveConfig, 'videoAsImage', { label: 'Camera as Image' });
 liveFolder.addInput(liveConfig, 'gradientMap', { label: 'Gradient Map' });
 liveFolder.addInput(liveConfig, 'keyOut', { label: 'Key Out BG' });
+liveFolder.addInput(liveConfig, 'dither', { min: 0, max: 1, step: 0.01, label: 'Edge Dither' });
 liveFolder.addInput(liveConfig, 'showSkeleton', { label: 'Show Tracking' });
 const cameraSetup = liveFolder.addFolder({ title: 'Camera Setup', expanded: false });
 cameraSetup.addInput(liveConfig, 'mirror', { label: 'Mirror' });
@@ -1653,24 +1660,69 @@ function syncSegmentationOption(): void {
     .finally(() => { segPending = false; });
 }
 
+// Separable box blur, in place on src. Used to widen the mask's edge so there is a band
+// for the dither to scatter across — the raw mask ramps over only a couple of pixels.
+function boxBlur(src: Uint8Array, tmp: Uint8Array, w: number, h: number, r: number): void {
+  const span = 2 * r + 1;
+  const cx = (x: number) => (x < 0 ? 0 : x > w - 1 ? w - 1 : x);
+  const cy = (y: number) => (y < 0 ? 0 : y > h - 1 ? h - 1 : y);
+  for (let y = 0; y < h; y++) {
+    const row = y * w;
+    let sum = 0;
+    for (let x = -r; x <= r; x++) sum += src[row + cx(x)];
+    for (let x = 0; x < w; x++) {
+      tmp[row + x] = (sum / span) | 0;
+      sum -= src[row + cx(x - r)];
+      sum += src[row + cx(x + r + 1)];
+    }
+  }
+  for (let x = 0; x < w; x++) {
+    let sum = 0;
+    for (let y = -r; y <= r; y++) sum += tmp[cy(y) * w + x];
+    for (let y = 0; y < h; y++) {
+      src[y * w + x] = (sum / span) | 0;
+      sum -= tmp[cy(y - r) * w + x];
+      sum += tmp[cy(y + r + 1) * w + x];
+    }
+  }
+}
+
 // Collapse the per-person masks into one alpha channel we can composite with.
 function buildMask(masks: Array<{ width: number; height: number; getAsUint8Array(): Uint8Array }>): void {
   const w = masks[0].width, h = masks[0].height;
+  const n = w * h;
   if (!maskCanvas || maskCanvas.width !== w || maskCanvas.height !== h) {
     maskCanvas = document.createElement('canvas');
     maskCanvas.width = w; maskCanvas.height = h;
     maskCtx = maskCanvas.getContext('2d')!;
     maskImage = maskCtx.createImageData(w, h);
     const d = maskImage.data;
-    for (let i = 0; i < w * h; i++) { d[i * 4] = 255; d[i * 4 + 1] = 255; d[i * 4 + 2] = 255; }
+    for (let i = 0; i < n; i++) { d[i * 4] = 255; d[i * 4 + 1] = 255; d[i * 4 + 2] = 255; }
+    maskWork = new Uint8Array(n);
+    maskTmp = new Uint8Array(n);
+    // Fixed thresholds: the grain sits still in the frame while the body moves through it,
+    // instead of re-randomising every frame and crawling.
+    ditherNoise = new Uint8Array(n);
+    for (let i = 0; i < n; i++) ditherNoise[i] = (Math.random() * 256) | 0;
   }
   const d = maskImage!.data;
-  const n = w * h;
-  const first = masks[0].getAsUint8Array();
-  for (let i = 0; i < n; i++) d[i * 4 + 3] = first[i];
+  const work = maskWork!;
+
+  work.set(masks[0].getAsUint8Array().subarray(0, n));
   for (let k = 1; k < masks.length; k++) {
     const a = masks[k].getAsUint8Array();
-    for (let i = 0; i < n; i++) if (a[i] > d[i * 4 + 3]) d[i * 4 + 3] = a[i];
+    for (let i = 0; i < n; i++) if (a[i] > work[i]) work[i] = a[i];
+  }
+
+  const amt = liveConfig.dither;
+  if (amt <= 0.001) {
+    for (let i = 0; i < n; i++) d[i * 4 + 3] = work[i];
+  } else {
+    boxBlur(work, maskTmp!, w, h, 1 + Math.round(amt * 4));
+    const noise = ditherNoise!;
+    // Fully-inside pixels always pass, fully-outside never do; the widened edge scatters
+    // in proportion to its coverage.
+    for (let i = 0; i < n; i++) d[i * 4 + 3] = work[i] > noise[i] ? 255 : 0;
   }
   maskCtx!.putImageData(maskImage!, 0, 0);
 }
