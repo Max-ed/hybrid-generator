@@ -1870,11 +1870,15 @@ function updatePresenceField(): void {
     if (hd) caps.push({ ax: hd.cx, ay: hd.cy, bx: hd.cx, by: hd.cy, r: hd.r, w: hd.w, vx: V[0], vy: V[1] });
     add(11, 12, 0.35); add(23, 24, 0.4);               // shoulders, hips
     add(11, 23, 0.45); add(12, 24, 0.45);              // torso sides
-    const wT = Math.min(act[11], act[12], act[23], act[24]);
-    if (wT > 0.02) {
+    // Same closed torso as magnetic mode, so it survives the hips leaving frame
+    const tq = torsoQuad(P, V, act, sw);
+    if (tq) {
       caps.push({                                      // torso centre
-        ax: (P[22] + P[24]) / 2, ay: (P[23] + P[25]) / 2, bx: (P[46] + P[48]) / 2, by: (P[47] + P[49]) / 2, r: sw * 0.6, w: wT,
-        vx: (V[22] + V[24] + V[46] + V[48]) / 4, vy: (V[23] + V[25] + V[47] + V[49]) / 4,
+        ax: (tq.x[0] + tq.x[1]) / 2, ay: (tq.y[0] + tq.y[1]) / 2,
+        bx: (tq.x[2] + tq.x[3]) / 2, by: (tq.y[2] + tq.y[3]) / 2,
+        r: sw * 0.6, w: tq.w,
+        vx: (tq.v[0][0] + tq.v[1][0] + tq.v[2][0] + tq.v[3][0]) / 4,
+        vy: (tq.v[0][1] + tq.v[1][1] + tq.v[2][1] + tq.v[3][1]) / 4,
       });
     }
     add(11, 13, 0.22); add(13, 15, 0.2); add(12, 14, 0.22); add(14, 16, 0.2);   // arms
@@ -1987,6 +1991,67 @@ function headDisc(P: Float32Array, act: Float32Array, sw: number): { cx: number;
   return null;
 }
 
+// The torso as a closed area rather than a wire quad between four joints.
+// Shoulder landmarks sit near the body's outer edge but hip landmarks sit well inside it,
+// so the corners are pushed out by different amounts, and the shape is extended past the
+// shoulders and hips to cover neck and pelvis. When the hips are out of frame — which
+// happens constantly as someone steps close — they are extrapolated down the body axis so
+// the torso keeps reading instead of blinking out.
+function torsoQuad(P: Float32Array, V: Float32Array, act: Float32Array, sw: number):
+  { x: number[]; y: number[]; w: number; v: Array<[number, number]> } | null {
+  const wSh = Math.min(act[11], act[12]);
+  if (wSh < 0.02) return null;
+
+  const slx = P[22], sly = P[23], srx = P[24], sry = P[25];
+  let hlx: number, hly: number, hrx: number, hry: number, wHip: number;
+  let vHipL: [number, number], vHipR: [number, number];
+
+  const wH = Math.min(act[23], act[24]);
+  if (wH > 0.02) {
+    hlx = P[46]; hly = P[47]; hrx = P[48]; hry = P[49];
+    wHip = wH;
+    vHipL = [V[46], V[47]]; vHipR = [V[48], V[49]];
+  } else {
+    let ax = srx - slx, ay = sry - sly;
+    const al = Math.hypot(ax, ay) || 1;
+    ax /= al; ay /= al;
+    let px = -ay, py = ax;                       // perpendicular to the shoulder line
+    const hx = act[0] > 0.02 ? P[0] : (slx + srx) / 2;
+    const hy = act[0] > 0.02 ? P[1] : (sly + sry) / 2 - sw;
+    // Of the two perpendiculars, take the one pointing away from the head.
+    if (px * ((slx + srx) / 2 - hx) + py * ((sly + sry) / 2 - hy) < 0) { px = -px; py = -py; }
+    const drop = sw * 1.5;
+    hlx = slx + px * drop; hly = sly + py * drop;
+    hrx = srx + px * drop; hry = sry + py * drop;
+    wHip = wSh * 0.85;                           // slightly less certain than a measured hip
+    vHipL = [V[22], V[23]]; vHipR = [V[24], V[25]];
+  }
+
+  // Lateral and downward axes of the body
+  let lx = srx - slx, ly = sry - sly;
+  const ll = Math.hypot(lx, ly) || 1; lx /= ll; ly /= ll;
+  let dx = (hlx + hrx) / 2 - (slx + srx) / 2, dy = (hly + hry) / 2 - (sly + sry) / 2;
+  const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+
+  const outS = 0.16 * sw, outH = 0.28 * sw, up = 0.14 * sw, down = 0.24 * sw;
+  return {
+    x: [
+      slx - lx * outS - dx * up,   // shoulder L
+      srx + lx * outS - dx * up,   // shoulder R
+      hrx + lx * outH + dx * down, // hip R
+      hlx - lx * outH + dx * down, // hip L
+    ],
+    y: [
+      sly - ly * outS - dy * up,
+      sry + ly * outS - dy * up,
+      hry + ly * outH + dy * down,
+      hly - ly * outH + dy * down,
+    ],
+    w: Math.min(wSh, wHip),
+    v: [[V[22], V[23]], [V[24], V[25]], vHipR, vHipL],
+  };
+}
+
 function buildMagShapes(): void {
   const out: MagShape[] = [];
   for (const pose of poses) {
@@ -1997,10 +2062,9 @@ function buildMagShapes(): void {
     const head = headDisc(P, act, sw);
     if (head) out.push({ kind: 'disc', ...head, v: act[7] > 0.02 ? [(V[14] + V[16]) / 2, (V[15] + V[17]) / 2] : vv(0) });
 
-    const wTorso = Math.min(act[11], act[12], act[23], act[24]);
-    if (wTorso > 0.02) {
-      const idx = [11, 12, 24, 23];
-      const qx = idx.map((i) => P[i * 2]), qy = idx.map((i) => P[i * 2 + 1]);
+    const torso = torsoQuad(P, V, act, sw);
+    if (torso) {
+      const { x: qx, y: qy } = torso;
       const ex: number[] = [], ey: number[] = [], elen2: number[] = [];
       for (let k = 0; k < 4; k++) {
         const k2 = (k + 1) & 3;
@@ -2008,9 +2072,9 @@ function buildMagShapes(): void {
         elen2.push(ex[k] * ex[k] + ey[k] * ey[k]);
       }
       out.push({
-        kind: 'quad', w: wTorso, x: qx, y: qy, ex, ey, elen2,
-        cx: (P[22] + P[24] + P[46] + P[48]) / 4, cy: (P[23] + P[25] + P[47] + P[49]) / 4,
-        v: idx.map(vv),
+        kind: 'quad', w: torso.w, x: qx, y: qy, ex, ey, elen2,
+        cx: (qx[0] + qx[1] + qx[2] + qx[3]) / 4, cy: (qy[0] + qy[1] + qy[2] + qy[3]) / 4,
+        v: torso.v,
       });
     }
     for (const [a, b] of BONES) {
