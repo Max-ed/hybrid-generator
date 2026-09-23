@@ -10,31 +10,24 @@
     <div id="app">
       <div id="canvas-holder"></div>
       <div id="sidebar">
-        <div id="uploads">
-          <label class="upload-label">
-            Image 1
-            <input id="upload-1" type="file" accept="image/*" />
-          </label>
-          <label class="upload-label">
-            Image 2
-            <input id="upload-2" type="file" accept="image/*" />
-          </label>
-          <label class="upload-label">
-            Image 3 — Block Texture
-            <input id="upload-3" type="file" accept="image/*" />
-          </label>
-          <label class="upload-label">
-            Typo Box 1 (SVG)
-            <input id="upload-typo-1" type="file" accept=".svg,image/svg+xml" />
-          </label>
-          <label class="upload-label">
-            Typo Box 2 (SVG)
-            <input id="upload-typo-2" type="file" accept=".svg,image/svg+xml" />
-          </label>
+        <div id="mode-tabs">
+          <button data-mode="record" class="active">Record</button>
+          <button data-mode="live">Live</button>
         </div>
+        <div id="uploads">
+          <label class="upload-label record-only">
+            Audio
+            <input id="upload-audio" type="file" accept="audio/*" />
+          </label>
+          <div id="audio-status" class="record-only" style="font-size:10px;color:#555;">No audio loaded</div>
+          <div id="camera-status" class="live-only" style="font-size:10px;color:#555;">Camera off</div>
+        </div>
+        <div id="typo-list"></div>
         <div id="pane-holder"></div>
       </div>
     </div>
+    <div id="timeline"></div>
+    <input id="upload-project" type="file" accept=".hybridproject,application/json" style="display:none">
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
