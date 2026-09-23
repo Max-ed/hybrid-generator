@@ -1294,8 +1294,25 @@ function setAppMode(mode: AppMode): void {
   updateCanvasScale();
 }
 
+// The Doc tab is a reading view, not a render mode: it leaves appMode alone and just
+// parks the draw loop so a hidden canvas isn't burning frames.
+type View = AppMode | 'doc';
+
+function setView(view: View): void {
+  document.body.classList.toggle('mode-doc', view === 'doc');
+  if (view === 'doc') {
+    myp5.noLoop();
+  } else {
+    myp5.loop();
+    setAppMode(view);
+  }
+  document.querySelectorAll<HTMLButtonElement>('#mode-tabs button')
+    .forEach((b) => b.classList.toggle('active', b.dataset.mode === view));
+  updateCanvasScale();
+}
+
 document.querySelectorAll<HTMLButtonElement>('#mode-tabs button').forEach((b) => {
-  b.addEventListener('click', () => setAppMode(b.dataset.mode as AppMode));
+  b.addEventListener('click', () => setView(b.dataset.mode as View));
 });
 liveFolder.hidden = true;
 

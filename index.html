@@ -13,6 +13,7 @@
         <div id="mode-tabs">
           <button data-mode="record" class="active">Record</button>
           <button data-mode="live">Live</button>
+          <button data-mode="doc">Doc</button>
         </div>
         <div id="uploads">
           <label class="upload-label record-only">
@@ -25,7 +26,290 @@
         <div id="typo-list"></div>
         <div id="pane-holder"></div>
       </div>
+
+      <article id="doc">
+        <h1>Hybrid Generator</h1>
+        <p class="lede">
+          Kurzanleitung. Der Generator hat zwei Arbeitsmodi:
+          <b>Record</b> für Poster, Animation und Export &ndash;
+          <b>Live</b> für Kamerasteuerung auf Screens im Raum.
+        </p>
+
+        <nav class="toc">
+          <a href="#s1">1 Grundeinstellungen</a>
+          <a href="#s2">2 Animation &amp; Keyframes</a>
+          <a href="#s3">3 Audio</a>
+          <a href="#s4">4 Typo-Boxen</a>
+          <a href="#s5">5 Export</a>
+          <a href="#s6">6 WebM &rarr; MP4</a>
+          <a href="#s7">7 Projekte</a>
+          <a href="#s8">8 Live-Modus</a>
+          <a href="#s9">9 Interaktion</a>
+          <a href="#s10">10 Live-Aufnahme</a>
+          <a href="#s11">11 Display</a>
+        </nav>
+
+        <!-- ------------------------------------------------------------ -->
+        <h2 id="s1">1 &nbsp;Grundeinstellungen</h2>
+        <p>Gelten in beiden Modi, ganz oben im Bedienfeld.</p>
+        <ol>
+          <li><b>Format</b> &ndash; Poster 700&times;990, Landscape 1920&times;1080, Social 1080&times;1920 oder Social 1080&times;1350.</li>
+          <li><b>Speed</b> &ndash; Tempo der Animation.</li>
+          <li><b>Variation</b> &ndash; streut das Tempo der einzelnen Elemente.</li>
+          <li><b>Density</b> &ndash; wie viele Elemente sichtbar sind.</li>
+          <li><span class="ui">Generate New</span> &ndash; würfelt eine neue Komposition.</li>
+        </ol>
+
+        <!-- ------------------------------------------------------------ -->
+        <h2 id="s2">2 &nbsp;Animation &amp; Keyframes <span class="tag">Record</span></h2>
+        <p>Die Timeline unter dem Poster steuert den zeitlichen Ablauf.</p>
+
+        <figure>
+          <svg viewBox="0 0 520 132" role="img" aria-label="Timeline mit Keyframes und Playhead">
+            <rect x="0" y="0" width="520" height="132" fill="#141414" rx="5"/>
+            <text x="14" y="21" class="d-lbl">Density</text>
+            <rect x="74" y="11" width="432" height="16" fill="#1e1e1e" rx="2"/>
+            <g fill="#ff00aa">
+              <path d="M120 19 l7 -7 7 7 -7 7 z"/>
+              <path d="M255 19 l7 -7 7 7 -7 7 z"/>
+              <path d="M430 19 l7 -7 7 7 -7 7 z"/>
+            </g>
+            <path d="M127 19 L262 19 M269 19 L430 19" stroke="#ff00aa" stroke-width="1" opacity=".5"/>
+
+            <text x="14" y="49" class="d-lbl">Speed</text>
+            <rect x="74" y="39" width="432" height="16" fill="#1e1e1e" rx="2"/>
+            <g fill="#00eaff">
+              <path d="M175 47 l7 -7 7 7 -7 7 z"/>
+              <path d="M350 47 l7 -7 7 7 -7 7 z"/>
+            </g>
+            <path d="M182 47 L350 47" stroke="#00eaff" stroke-width="1" opacity=".5"/>
+
+            <text x="14" y="77" class="d-lbl">Typo 1</text>
+            <rect x="74" y="67" width="432" height="16" fill="#1e1e1e" rx="2"/>
+            <rect x="150" y="67" width="200" height="16" fill="#003cff" opacity=".55" rx="2"/>
+            <rect x="150" y="69" width="4" height="12" fill="#fff" opacity=".8"/>
+            <rect x="346" y="69" width="4" height="12" fill="#fff" opacity=".8"/>
+
+            <text x="14" y="105" class="d-lbl">Audio</text>
+            <rect x="74" y="95" width="432" height="16" fill="#1e1e1e" rx="2"/>
+            <rect x="200" y="95" width="180" height="16" fill="#00ff66" opacity=".35" rx="2"/>
+
+            <path d="M300 6 L300 124" stroke="#fff" stroke-width="1.5"/>
+            <path d="M294 6 l12 0 -6 7 z" fill="#fff"/>
+          </svg>
+          <figcaption>Keyframes als Rauten, sichtbare Bereiche als Balken, Playhead in Weiß.</figcaption>
+        </figure>
+
+        <ol>
+          <li>Mit <span class="ui">▶</span> abspielen, mit <span class="ui">⏸</span> pausieren. Dauer oben in der Timeline einstellen.</li>
+          <li>Playhead an die gewünschte Stelle ziehen.</li>
+          <li>Slider auf den gewünschten Wert setzen.</li>
+          <li><span class="ui">◆ Set Density Key</span> bzw. <span class="ui">◆ Set Speed Key</span> klicken.</li>
+          <li>Ab zwei Keyframes animiert der Generator automatisch dazwischen.</li>
+          <li>Keyframe anklicken = auswählen (weißer Rand), ziehen = verschieben, <span class="ui">Entf</span> = löschen.</li>
+        </ol>
+        <p class="note">Tempowechsel werden weich eingeblendet &ndash; die Animation springt nicht.</p>
+
+        <!-- ------------------------------------------------------------ -->
+        <h2 id="s3">3 &nbsp;Audio <span class="tag">Record</span></h2>
+        <ol>
+          <li>MP3 über <b>Audio</b> laden.</li>
+          <li>Der grüne Balken erscheint in der Timeline. Verschieben zum Positionieren, an den Kanten ziehen zum Kürzen.</li>
+          <li>Unter <b>Audio React</b> einstellen, wie stark Bass und Lautstärke auf <b>Density</b> und <b>Speed</b> wirken.</li>
+        </ol>
+
+        <!-- ------------------------------------------------------------ -->
+        <h2 id="s4">4 &nbsp;Typo-Boxen</h2>
+        <ol>
+          <li><span class="ui">+ Add Typo Box</span> klicken.</li>
+          <li><span class="ui">Upload SVG</span> &ndash; die Datei wird scharf gerastert.</li>
+          <li><b>Scale</b> = Größe, <b>Z layer</b> = Ebene, <b>X / Y</b> = Position.</li>
+          <li>In der Timeline bestimmt der farbige Balken, wann die Box sichtbar ist: verschieben zum Positionieren, an den Kanten kürzen.</li>
+          <li>Für Bewegung: Playhead setzen, Position über <b>X / Y</b> wählen, <span class="ui">◆ Add Pos Key</span> klicken. Ab zwei Keys bewegt sich die Box.</li>
+        </ol>
+
+        <!-- ------------------------------------------------------------ -->
+        <h2 id="s5">5 &nbsp;Export <span class="tag">Record</span></h2>
+        <p><b>Standbilder</b></p>
+        <ol>
+          <li><span class="ui">Save JPG</span> oder <span class="ui">Save PNG</span> &ndash; das aktuelle Bild.</li>
+          <li><span class="ui">Save PNG (8×)</span> &ndash; hochauflösend für den Druck.</li>
+        </ol>
+        <p><b>Video</b></p>
+        <ol>
+          <li>In der Timeline <span class="ui">⏺ Record</span> klicken.</li>
+          <li>Der Generator spielt einen vollständigen Durchlauf ab und stoppt selbstständig.</li>
+          <li>Die Datei wird als <b>.webm</b> heruntergeladen.</li>
+        </ol>
+
+        <!-- ------------------------------------------------------------ -->
+        <h2 id="s6">6 &nbsp;WebM in MP4 umwandeln</h2>
+        <p>WebM lässt sich nicht überall abspielen. Zwei Wege:</p>
+        <p><b>Online</b></p>
+        <ol>
+          <li><b>cloudconvert.com/webm-to-mp4</b> oder <b>freeconvert.com/webm-to-mp4</b> öffnen.</li>
+          <li>Datei hochladen, Zielformat <b>MP4</b> wählen, konvertieren, herunterladen.</li>
+        </ol>
+        <p><b>Lokal</b></p>
+        <p>Die WebM-Datei direkt in <b>Adobe Media Encoder</b> oder <b>Premiere</b> importieren und als H.264 ausgeben. Empfiehlt sich bei vertraulichem Material oder großen Dateien.</p>
+
+        <!-- ------------------------------------------------------------ -->
+        <h2 id="s7">7 &nbsp;Projekte speichern &amp; laden</h2>
+        <ol>
+          <li><span class="ui">💾 Save Project</span> legt eine <b>.hybridproject</b>-Datei an: alle Einstellungen, Typo-Boxen, Keyframes und das Audio.</li>
+          <li><span class="ui">📂 Open Project</span> stellt alles wieder her.</li>
+        </ol>
+
+        <!-- ------------------------------------------------------------ -->
+        <h2 id="s8">8 &nbsp;Live-Modus</h2>
+        <ol>
+          <li>Auf den Tab <b>Live</b> wechseln &ndash; die Kamera startet automatisch.</li>
+          <li>Beim ersten Mal den Kamerazugriff im Browser erlauben.</li>
+          <li>Der Status <b class="ok">● Camera live</b> zeigt an, dass die Erkennung läuft.</li>
+          <li>Timeline und Keyframes entfallen, die Animation läuft durchgehend. Alle Slider wirken weiterhin sofort.</li>
+        </ol>
+        <p class="note">Der Generator erkennt bis zu drei Personen gleichzeitig, auch wenn sie stillstehen.</p>
+
+        <!-- ------------------------------------------------------------ -->
+        <h2 id="s9">9 &nbsp;Interaktion <span class="tag">Live</span></h2>
+
+        <figure>
+          <svg viewBox="0 0 520 120" role="img" aria-label="Die drei Interaktionsmodi">
+            <g>
+              <rect x="6" y="8" width="160" height="104" fill="#141414" rx="5"/>
+              <g fill="#ff00aa" opacity=".9">
+                <rect x="70" y="34" width="12" height="34" rx="2"/><circle cx="76" cy="26" r="7"/>
+                <rect x="60" y="68" width="8" height="26" rx="2"/><rect x="84" y="68" width="8" height="26" rx="2"/>
+              </g>
+              <g fill="#00eaff" opacity=".75">
+                <rect x="40" y="40" width="16" height="10"/><rect x="96" y="30" width="12" height="12"/>
+                <rect x="34" y="72" width="12" height="9"/><rect x="104" y="66" width="15" height="10"/>
+                <rect x="52" y="20" width="10" height="8"/><rect x="96" y="84" width="14" height="9"/>
+              </g>
+              <text x="86" y="107" class="d-cap">Follow</text>
+            </g>
+            <g>
+              <rect x="180" y="8" width="160" height="104" fill="#141414" rx="5"/>
+              <g fill="#ff00aa" opacity=".9">
+                <rect x="254" y="34" width="12" height="34" rx="2"/><circle cx="260" cy="26" r="7"/>
+                <rect x="244" y="68" width="8" height="26" rx="2"/><rect x="268" y="68" width="8" height="26" rx="2"/>
+              </g>
+              <g fill="#00eaff" opacity=".75">
+                <rect x="190" y="16" width="16" height="10"/><rect x="316" y="22" width="14" height="11"/>
+                <rect x="188" y="88" width="13" height="9"/><rect x="318" y="84" width="15" height="10"/>
+                <rect x="192" y="52" width="11" height="9"/><rect x="322" y="54" width="12" height="9"/>
+              </g>
+              <text x="260" y="107" class="d-cap">Avoid</text>
+            </g>
+            <g>
+              <rect x="354" y="8" width="160" height="104" fill="#141414" rx="5"/>
+              <g stroke="#ff00aa" stroke-width="2" opacity=".5" fill="none">
+                <path d="M434 32 L434 66 M434 66 L424 92 M434 66 L444 92 M434 42 L418 56 M434 42 L450 56"/>
+              </g>
+              <g fill="#00eaff" opacity=".9">
+                <rect x="428" y="18" width="12" height="12" rx="1"/>
+                <rect x="429" y="36" width="10" height="10"/><rect x="429" y="50" width="10" height="10"/>
+                <rect x="418" y="50" width="9" height="8"/><rect x="443" y="50" width="9" height="8"/>
+                <rect x="420" y="74" width="9" height="9"/><rect x="440" y="74" width="9" height="9"/>
+                <rect x="422" y="88" width="8" height="8"/><rect x="438" y="88" width="8" height="8"/>
+              </g>
+              <text x="434" y="107" class="d-cap">Cling</text>
+            </g>
+          </svg>
+          <figcaption>Die drei Modi: Formen folgen der Person, weichen aus, oder legen sich an das Skelett.</figcaption>
+        </figure>
+
+        <p><b>Mode</b></p>
+        <ol>
+          <li><b>Squares follow the body</b> &ndash; Formen wandern zur Person.</li>
+          <li><b>Squares avoid the body</b> &ndash; Formen weichen aus, die Person bleibt frei.</li>
+          <li><b>Squares cling to the skeleton</b> &ndash; Formen legen sich an Kopf, Körper und Gliedmaßen. <i>Standard.</i></li>
+        </ol>
+
+        <p><b>Regler</b></p>
+        <ol>
+          <li><b>Strength</b> &ndash; wie stark die Formen reagieren.</li>
+          <li><b>Movement</b> &ndash; wie stark schnelle Bewegungen die Formen mitreißen.</li>
+          <li><b>Energy</b> &ndash; wie stark Anwesenheit Density und Speed anhebt.</li>
+        </ol>
+
+        <p><b>Bild</b></p>
+        <ol>
+          <li><b>Camera as Image</b> &ndash; die Bildfragmente zeigen das Live-Kamerabild statt des Standbilds.</li>
+          <li><b>Gradient Map</b> &ndash; färbt das Kamerabild in den Farben des Generators.</li>
+          <li><b>Key Out BG</b> &ndash; blendet den Hintergrund aus, nur die Person bleibt sichtbar.</li>
+          <li><b>Show Tracking</b> &ndash; zeigt das erkannte Skelett. Nur zum Einrichten, im Betrieb ausschalten.</li>
+        </ol>
+
+        <p><b>Camera Setup</b></p>
+        <ol>
+          <li><b>Mirror</b> &ndash; spiegelt das Bild, damit Bewegung nach rechts auch rechts erscheint.</li>
+          <li><b>Orientation</b> &ndash; einstellen, wenn die Kamera hochkant montiert ist.</li>
+        </ol>
+        <p class="note">Hochkant montierte Kamera erfasst stehende Personen deutlich besser &ndash; besonders nah am Screen.</p>
+
+        <!-- ------------------------------------------------------------ -->
+        <h2 id="s10">10 &nbsp;Live-Aufnahme <span class="tag">Live</span></h2>
+        <ol>
+          <li><b>Clip Length s</b> &ndash; gewünschte Länge in Sekunden eintragen.</li>
+          <li><span class="ui">⏺ Record Clip</span> klicken.</li>
+          <li>Der Button zählt rückwärts, stoppt automatisch und lädt die <b>.webm</b> herunter.</li>
+          <li>Ein erneuter Klick stoppt früher. Umwandeln in MP4 wie unter Punkt 6.</li>
+        </ol>
+
+        <!-- ------------------------------------------------------------ -->
+        <h2 id="s11">11 &nbsp;Display für öffentliche Screens <span class="tag">Live</span></h2>
+
+        <figure>
+          <svg viewBox="0 0 520 150" role="img" aria-label="Bedienfenster steuert Display-Fenster">
+            <rect x="8" y="16" width="210" height="122" fill="#141414" rx="5"/>
+            <rect x="8" y="16" width="210" height="16" fill="#1e1e1e" rx="5"/>
+            <circle cx="20" cy="24" r="3" fill="#444"/><circle cx="30" cy="24" r="3" fill="#444"/>
+            <rect x="18" y="42" width="96" height="86" fill="#0a0a0a" rx="2"/>
+            <rect x="26" y="52" width="40" height="12" fill="#ff00aa" opacity=".6"/>
+            <rect x="26" y="72" width="60" height="9" fill="#00eaff" opacity=".5"/>
+            <rect x="124" y="42" width="84" height="8" rx="2" fill="#2a2a2a"/>
+            <rect x="124" y="56" width="84" height="6" rx="2" fill="#222"/>
+            <rect x="124" y="68" width="84" height="6" rx="2" fill="#222"/>
+            <rect x="124" y="80" width="84" height="6" rx="2" fill="#222"/>
+            <rect x="124" y="96" width="84" height="12" rx="2" fill="#2f2f2f"/>
+            <text x="113" y="12" class="d-cap">Bedienfenster</text>
+
+            <path d="M232 76 L292 76" stroke="#ff00aa" stroke-width="1.5"/>
+            <path d="M292 76 l-8 -5 0 10 z" fill="#ff00aa"/>
+            <text x="262" y="66" class="d-cap" fill="#ff00aa">live</text>
+
+            <rect x="306" y="16" width="206" height="122" fill="#141414" rx="5"/>
+            <rect x="306" y="16" width="206" height="16" fill="#1e1e1e" rx="5"/>
+            <rect x="330" y="20" width="160" height="8" rx="4" fill="#0a0a0a"/>
+            <text x="348" y="27" class="d-url">/?display=a1b2c3</text>
+            <rect x="316" y="42" width="186" height="86" fill="#000" rx="2"/>
+            <g opacity=".9">
+              <rect x="372" y="54" width="14" height="14" fill="#ff00aa"/>
+              <rect x="390" y="66" width="30" height="10" fill="#00eaff"/>
+              <rect x="360" y="80" width="20" height="18" fill="#ff5a00"/>
+              <rect x="396" y="88" width="16" height="16" fill="#00ff66"/>
+              <rect x="378" y="106" width="26" height="9" fill="#003cff"/>
+            </g>
+            <text x="409" y="12" class="d-cap">Display &ndash; Vollbild</text>
+          </svg>
+          <figcaption>Das Display-Fenster läuft eigenständig und wird aus dem Bedienfenster gesteuert.</figcaption>
+        </figure>
+
+        <ol>
+          <li><span class="ui">⛶ Open Display Window</span> klicken &ndash; es öffnet sich ein neuer Tab mit eigener Adresse.</li>
+          <li>Dieses Fenster zeigt nur das Bild: keine Bedienelemente, kein Mauszeiger.</li>
+          <li>Einmal hineinklicken für Vollbild. <span class="ui">Esc</span> beendet den Vollbildmodus.</li>
+          <li>Das Display-Fenster braucht eine eigene Kamerafreigabe.</li>
+          <li>Änderungen im Bedienfenster erscheinen sofort auf dem Display.</li>
+        </ol>
+        <p class="note">
+          Fenster auf den zweiten Bildschirm ziehen, dann Vollbild. Beim Neustart merkt sich
+          das Display die zuletzt benutzten Einstellungen dieses Rechners.
+        </p>
+      </article>
     </div>
+
     <div id="timeline"></div>
     <input id="upload-project" type="file" accept=".hybridproject,application/json" style="display:none">
     <script type="module" src="/src/main.ts"></script>
