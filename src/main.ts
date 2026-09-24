@@ -735,17 +735,33 @@ const sketch = (p: p5) => {
   // Draw layers
   // ---------------------------------------------------------------------------
 
+  // Every blendMode() change flushes canvas compositing state, and the layers were setting
+  // it 2-3x per element — over 1000 flushes a frame, each one costing more the larger the
+  // surface. Skipping the redundant ones is free and invisible.
+  let curBlend: unknown = null;
+  function setBlend(mode: unknown) {
+    if (mode !== curBlend) { p.blendMode(mode as BLEND_MODE); curBlend = mode; }
+  }
+
+  // Elements start off-canvas and drift across, so a good share of every frame is spent
+  // drawing things nobody can see. Sub-rects only ever extend right/down from the origin,
+  // so the generous left/top margin here can't clip anything visible.
+  function offscreen(x: number, y: number, w: number, h: number): boolean {
+    return x > p.width || y > p.height || x + w * 2.5 < 0 || y + h * 2.5 < 0;
+  }
+
   function drawStructuralLayer(t: number, m: number, d: number) {
     const count = safeCount(systems.structures, systems.structures.length * d);
     for (let i = 0; i < count; i++) {
       const s = systems.structures[i];
       const l = lifecycle(s.id, t);
       if (l.life < 0.05) continue;
-      p.blendMode(s.mode); p.noStroke(); p.fill(s.c);
       const motion = applyMotion(s.x, s.y, l.travel, m, 0.8, s.w, s.h);
       const sw = s.w * motion.scaleMul, sh = s.h * motion.scaleMul;
+      if (offscreen(motion.x, motion.y, sw, sh)) continue;
+      setBlend(s.mode); p.noStroke(); p.fill(s.c);
       p.rect(motion.x, motion.y, sw, sh);
-      p.blendMode(p.DIFFERENCE);
+      setBlend(p.DIFFERENCE);
       for (let k = 0; k < 3; k++) {
         p.fill(k % 2 === 0 ? 255 : 0);
         p.rect(motion.x + p.noise(s.id + k) * sw, motion.y + p.noise(s.id + k + 10) * sh,
@@ -760,11 +776,12 @@ const sketch = (p: p5) => {
       const h = systems.hero[i];
       const l = lifecycle(h.id, t * 0.75);
       if (l.life < 0.04) continue;
-      p.blendMode(h.mode); p.noStroke(); p.fill(h.c);
       const motion = applyMotion(h.x, h.y, l.travel, m, 0.55, h.w, h.h);
       const w = h.w * motion.scaleMul, hh = h.h * motion.scaleMul;
+      if (offscreen(motion.x, motion.y, w, hh)) continue;
+      setBlend(h.mode); p.noStroke(); p.fill(h.c);
       p.rect(motion.x, motion.y, w, hh);
-      p.blendMode(p.DIFFERENCE); p.fill(255);
+      setBlend(p.DIFFERENCE); p.fill(255);
       p.rect(motion.x + w * 0.15, motion.y + hh * 0.42, w * 0.65, Math.max(3, hh * 0.08));
     }
   }
@@ -775,12 +792,13 @@ const sketch = (p: p5) => {
       const c = systems.clusters[i];
       const l = lifecycle(c.id, t * 1.2);
       if (l.life < 0.08) continue;
-      p.blendMode(c.mode); p.noStroke();
       const motion = applyMotion(c.x, c.y, l.travel, m, 1.05, c.w, c.h);
       const cw = c.w * motion.scaleMul, ch = c.h * motion.scaleMul;
       const y = motion.y + p.noise(c.id, seed) * 22 * m;
+      if (offscreen(motion.x, y, cw, ch)) continue;
+      setBlend(c.mode); p.noStroke();
       p.fill(c.c); p.rect(motion.x, y, cw, ch);
-      p.blendMode(p.DIFFERENCE); p.fill(255);
+      setBlend(p.DIFFERENCE); p.fill(255);
       p.rect(motion.x, y + ch * 0.5, cw * 1.5, Math.max(2, ch * 0.08));
     }
   }
@@ -791,16 +809,18 @@ const sketch = (p: p5) => {
       const pt = systems.micro[i];
       const l = lifecycle(pt.id, t * 1.8);
       if (l.life < 0.1) continue;
-      p.blendMode(pt.mode); p.noStroke(); p.fill(pt.c);
       const motion = applyMotion(pt.x, pt.y, l.travel, m, 1.2, pt.w, pt.h);
-      p.rect(motion.x, motion.y, pt.w * motion.scaleMul, pt.h * motion.scaleMul);
+      const mw = pt.w * motion.scaleMul, mh = pt.h * motion.scaleMul;
+      if (offscreen(motion.x, motion.y, mw, mh)) continue;
+      setBlend(pt.mode); p.noStroke(); p.fill(pt.c);
+      p.rect(motion.x, motion.y, mw, mh);
     }
   }
 
   function drawImageFragments(img: p5.Image | p5.Graphics | null, t: number, m: number, offset: number, d: number, rasterScale = IMAGE_RASTER_SCALE) {
     if (!img) return;
     const count = safeCount(systems.imageSlices, systems.imageSlices.length * d);
-    p.blendMode(IMAGE_BLEND_MODE); p.smooth();
+    setBlend(IMAGE_BLEND_MODE); p.smooth();
     for (let i = 0; i < count; i++) {
       const s = systems.imageSlices[i];
       const l = lifecycle(s.id + offset, t * 0.9);
@@ -812,6 +832,7 @@ const sketch = (p: p5) => {
       const sy = Math.floor(p.map(p.noise(s.id + offset, seed), 0, 1, 0, logicalH - sampleH));
       const sx = Math.floor(p.map(p.noise(s.id + offset + 90, seed), 0, 1, 0, logicalW - sampleW));
       const motion = applyMotion(s.x, s.y, l.travel, m, 0.95, s.w, s.h);
+      if (offscreen(motion.x, motion.y, s.w * motion.scaleMul, s.h * motion.scaleMul)) continue;
       p.image(img, motion.x, motion.y, s.w * motion.scaleMul, s.h * motion.scaleMul,
         sx * rasterScale, sy * rasterScale,
         sampleW * rasterScale, sampleH * rasterScale);
@@ -954,6 +975,7 @@ const sketch = (p: p5) => {
     }
 
     p.randomSeed(seed); p.noiseSeed(seed);
+    curBlend = null;          // background may touch compositing state
     p.background(0);
 
     // t is the accumulated animation phase — smooth even when speed is keyed.
@@ -1019,8 +1041,16 @@ const sketch = (p: p5) => {
     typoInserts.forEach(({ z, fn }) => layers.splice(z, 0, fn));
     layers.forEach((draw) => draw());
 
-    p.blendMode(p.BLEND);
-    if (live && liveConfig.showSkeleton) drawSkeletonDebug();
+    setBlend(p.BLEND);
+    if (live && liveConfig.showSkeleton) { drawSkeletonDebug(); curBlend = null; }
+
+    // Frame-rate readout — the venue machine is the only place this number matters.
+    if (live && p.frameCount % 20 === 0) {
+      const fps = p.frameRate();
+      const target = params.format === 'social4k' ? 30 : 60;
+      perfStatusEl.textContent = `${fps.toFixed(0)} fps  ·  Ziel ${target}`;
+      perfStatusEl.style.color = fps > target * 0.9 ? '#00cc88' : fps > target * 0.65 ? '#ccaa00' : '#ff4444';
+    }
   };
 
   // ---------------------------------------------------------------------------
@@ -1095,6 +1125,7 @@ const sketch = (p: p5) => {
     const sp = spec[fmt] ?? spec.poster;
     canvasW = sp.w; canvasH = sp.h;
     p.pixelDensity(sp.density);
+    p.frameRate(sp.density > 1 ? 30 : 60);
     p.resizeCanvas(canvasW, canvasH);
     p.noSmooth();
     generatePoster();
@@ -1286,6 +1317,7 @@ projectFolder.addButton({ title: '📂 Open Project' }).on('click', () => {
 // ---------------------------------------------------------------------------
 
 const cameraStatusEl = document.getElementById('camera-status')!;
+const perfStatusEl = document.getElementById('perf-status')!;
 
 function setAppMode(mode: AppMode): void {
   if (mode === appMode) return;
