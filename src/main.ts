@@ -12,7 +12,7 @@ type BLEND_MODE =
   | 'difference' | 'exclusion' | 'hard-light' | 'lighten' | 'lighter'
   | 'multiply' | 'overlay' | 'screen' | 'soft-light' | 'source-over' | 'subtract';
 
-type Format = 'poster' | 'landscape' | 'social' | 'social45';
+type Format = 'poster' | 'landscape' | 'social' | 'social45' | 'social4k';
 
 // Position keyframe for typo box animation
 interface PosKeyframe { time: number; x: number; y: number; }
@@ -1082,14 +1082,21 @@ const sketch = (p: p5) => {
 
   exposed.setFormat = (fmt: Format) => {
     params.format = fmt;
-    const dims: Record<Format, [number, number]> = {
-      poster: [POSTER_W, POSTER_H],
-      landscape: [LANDSCAPE_W, LANDSCAPE_H],
-      social: [SOCIAL_W, SOCIAL_H],
-      social45: [SOCIAL45_W, SOCIAL45_H],
+    // 4K portrait is the social format drawn at 2× pixel density rather than a 2160-wide
+    // canvas: every element keeps its size relative to the frame, so the composition is
+    // identical to the HD version instead of the same absolute sizes floating in 4× the area.
+    const spec: Record<Format, { w: number; h: number; density: number }> = {
+      poster:    { w: POSTER_W,    h: POSTER_H,    density: 1 },
+      landscape: { w: LANDSCAPE_W, h: LANDSCAPE_H, density: 1 },
+      social:    { w: SOCIAL_W,    h: SOCIAL_H,    density: 1 },
+      social45:  { w: SOCIAL45_W,  h: SOCIAL45_H,  density: 1 },
+      social4k:  { w: SOCIAL_W,    h: SOCIAL_H,    density: 2 },
     };
-    [canvasW, canvasH] = dims[fmt] ?? [POSTER_W, POSTER_H];
+    const sp = spec[fmt] ?? spec.poster;
+    canvasW = sp.w; canvasH = sp.h;
+    p.pixelDensity(sp.density);
     p.resizeCanvas(canvasW, canvasH);
+    p.noSmooth();
     generatePoster();
     updateCanvasScale();
   };
@@ -1220,6 +1227,7 @@ pane.addInput(params, 'format', {
   options: {
     'Poster 700×990': 'poster', 'Landscape 1920×1080': 'landscape',
     'Social 1080×1920': 'social', 'Social 1080×1350': 'social45',
+    'Social 4K 2160×3840': 'social4k',
   },
 });
 pane.addInput(params, 'baseSpeed', { min: 0, max: 100, step: 1, label: 'Speed' });
@@ -1479,6 +1487,11 @@ function downloadRecording(mimeType: string): void {
   updateLiveRecBtn();
 }
 
+// 12 Mbps holds up at HD; a 4K frame carries 4× the pixels and turns to mush at that rate.
+function recordBitrate(el: HTMLCanvasElement): number {
+  return el.width * el.height > 4_000_000 ? 40_000_000 : 12_000_000;
+}
+
 const REC_MIME = () => ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
   .find((m) => MediaRecorder.isTypeSupported(m)) ?? 'video/webm';
 
@@ -1500,7 +1513,7 @@ function startLiveRecording(): void {
   const mimeType = REC_MIME();
   recordedChunks = [];
   mediaRecorder = new MediaRecorder(canvasEl.captureStream(60), {
-    mimeType, videoBitsPerSecond: 12_000_000,
+    mimeType, videoBitsPerSecond: recordBitrate(canvasEl),
   });
   mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
   mediaRecorder.onstop = () => { downloadRecording(mimeType); };
@@ -1547,7 +1560,7 @@ function startRecording() {
   recordedChunks = [];
   mediaRecorder = new MediaRecorder(stream, {
     mimeType,
-    videoBitsPerSecond: 12_000_000,  // 12 Mbps — high quality for AME input
+    videoBitsPerSecond: recordBitrate(canvasEl),
   });
 
   mediaRecorder.ondataavailable = (e) => {
